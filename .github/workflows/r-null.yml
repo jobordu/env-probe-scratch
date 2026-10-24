@@ -1,0 +1,20 @@
+name: r-null
+on:
+  workflow_call:
+    inputs:
+      environment: { type: string, required: false, default: "" }
+    secrets:
+      PROBE: { required: false }
+      ONLYENV: { required: false }
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment != '' && inputs.environment || null }}
+    steps:
+      - shell: bash
+        env:
+          P: ${{ secrets.PROBE }}
+          O: ${{ secrets.ONLYENV }}
+        run: |
+          c() { case "$1" in repo-marker) echo repo;; env-marker) echo env;; "") echo absent;; *) echo other;; esac; }
+          echo "variant=null ref=$GITHUB_REF PROBE=$(c "$P") ONLYENV=$(c "$O")" | tee -a "$GITHUB_STEP_SUMMARY"
