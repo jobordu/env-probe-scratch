@@ -1,0 +1,16 @@
+name: token-probe
+on: { workflow_dispatch: {} }
+permissions: write-all   # the most GITHUB_TOKEN can be granted
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    environment: no-secret-env
+    steps:
+      - shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for path in "environments/no-secret-env/secrets" "environments/ci-read/secrets" "actions/secrets"; do
+            code=$(curl -s -o /tmp/b -w '%{http_code}' -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$GITHUB_REPOSITORY/$path")
+            echo "TOKENPROBE $path -> HTTP $code $(jq -r '.message // ("total_count=" + (.total_count|tostring))' /tmp/b)"
+          done
